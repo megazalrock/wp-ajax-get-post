@@ -98,28 +98,43 @@ class WP_Ajax_Get_Posts {
 
 	public function ajax_get_posts(){
 		header("Content-Type: application/javascript; charset=utf-8",true,200);
-		header("Access-Control-Allow-Origin: *");
+		//header("Access-Control-Allow-Origin: *");
+		$posts = array();
+		$query = wp_parse_args(preg_replace('/^\?/', '', strstr($_SERVER["REQUEST_URI"], '?')));
 
 		$callback_name = $_REQUEST['callback'];
 		$callback_template = $callback_name.'(%s)';
-		$query = wp_parse_args(preg_replace('/^\?/', '', strstr($_SERVER["REQUEST_URI"], '?')));
-		$posts = get_posts($query);
-		$posts = $this->get_cf_data($posts);
+
+		unset($query['callback']);
+		unset($query['blog_ids']);
+
+		if(is_multisite() && is_set($_REQUEST['blog_ids'])){
+			if(is_set($_REQUEST['blog_ids'])){
+				$blog_ids =  explode(',', $_REQUEST['blog_ids']);
+			}else{
+				$blog_ids = $this->get_blogs();
+			}
+			foreach ($blog_ids as $blog_id) {
+				switch_to_blog($blog_id);
+				$_posts = get_posts($query);
+				apply_filters($this->add_prefix('ajax_get_posts_multisite'),$_posts);
+				array_merge($posts,$_posts);
+				restore_current_blog();
+			}
+		}else{
+			$posts = get_posts($query);
+		}
 		apply_filters($this->add_prefix('ajax_get_posts'),$posts);
 		echo sprintf($callback_template,json_encode($posts));
 		die;
 	}
 
-	/**
-	 * get all custom field data;
-	 */
-	public static function get_cf_data($post){
-		$cf_array = get_post_custom($post->ID);
-		foreach ($cf_array as $key => $value){
-			$cf_array[$key] = $value[0];
-		}
-		$post -> cf = $cf_array;
-		return $post;
+	private function get_blogs(){
+		global $wpdb;
+		$prefix = preg_replace('/'.$wpdb->blogid.'_/', '', $wpdb->prefix);
+		$query = sprintf( 'SELECT * FROM %sblogs', $prefix );
+		$blogs = $wpdb->get_results($query);
+		return $blogs;
 	}
 
 	/**
