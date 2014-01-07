@@ -100,40 +100,62 @@ class WP_Ajax_Get_Posts {
 		header("Content-Type: application/javascript; charset=utf-8",true,200);
 		//header("Access-Control-Allow-Origin: *");
 		$posts = array();
-		$query = wp_parse_args(preg_replace('/^\?/', '', strstr($_SERVER["REQUEST_URI"], '?')));
+		if(is_array($_REQUEST['query'])){
+			$query = $_REQUEST['query'];
+		}else{
+			$query = array();
+		}
 
 		$callback_name = $_REQUEST['callback'];
 		$callback_template = $callback_name.'(%s)';
 
-		unset($query['callback']);
-		unset($query['blog_ids']);
-
 		if(is_multisite()){
-			if(isset($_REQUEST['blog_ids'])){
-				$blog_ids =  explode(',', $_REQUEST['blog_ids']);
+			if(isset($_REQUEST['blog_id'])){
+				if(is_string($_REQUEST['blog_id'])){
+					$blog_id =  explode(',', $_REQUEST['blog_id']);
+				}elseif(is_array($_REQUEST['blog_id'])){
+					$blog_id =  $_REQUEST['blog_id'];
+				}else{
+					die ('invalued data : blog_id');
+				}
 			}else{
-				$blog_ids = $this->get_blogs();
+				$blog_id = $this->get_blogs();
 			}
-			foreach ($blog_ids as $blog_id) {
+			if(isset($_REQUEST['exclude_blog_id'])){
+				if(is_string($_REQUEST['exclude_blog_id'])){
+					$exclude_blog_id =  explode(',', $_REQUEST['exclude_blog_id']);
+				}elseif(is_array($_REQUEST['exclude_blog_id'])){
+					$exclude_blog_id =  $_REQUEST['exclude_blog_id'];
+				}else{
+					die ('invalued data : exclude_blog_id');
+				}
+			}else{
+				$exclude_blog_id = array();
+			}
+
+			foreach ($blog_id as $blog_id) {
+				if(array_search($blog_id, $exclude_blog_id)){
+					continue;
+				}
 				switch_to_blog($blog_id);
 				$_posts = get_posts($query);
-				apply_filters($this->add_prefix('ajax_get_posts_multisite'),$_posts);
-				array_merge($posts,$_posts);
+				$_posts = apply_filters($this->add_prefix('ajax_get_posts_each_site'),$_posts,$blog_id);
+				$posts = array_merge($posts,$_posts);
 				restore_current_blog();
 			}
 		}else{
 			$posts = get_posts($query);
 		}
-		apply_filters($this->add_prefix('ajax_get_posts'),$posts);
-		echo sprintf($callback_template,json_encode($posts));
+		$json_data = apply_filters($this->add_prefix('make_json_data'),$posts);
+		echo sprintf($callback_template,json_encode($json_data));
 		die;
 	}
 
 	private function get_blogs(){
 		global $wpdb;
 		$prefix = preg_replace('/'.$wpdb->blogid.'_/', '', $wpdb->prefix);
-		$query = sprintf( 'SELECT * FROM %sblogs', $prefix );
-		$blogs = $wpdb->get_results($query);
+		$query = sprintf( 'SELECT blog_id FROM %sblogs', $prefix );
+		$blogs = $wpdb->get_col($query);
 		return $blogs;
 	}
 
