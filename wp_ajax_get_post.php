@@ -108,7 +108,7 @@ class WP_Ajax_Get_Posts {
 		unset($query['callback']);
 		unset($query['blog_ids']);
 
-		if(is_multisite() && is_set($_REQUEST['blog_ids'])){
+		if(is_multisite() && isset($_REQUEST['blog_ids'])){
 			if(is_set($_REQUEST['blog_ids'])){
 				$blog_ids =  explode(',', $_REQUEST['blog_ids']);
 			}else{
