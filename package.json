@@ -1,12 +1,13 @@
 {
-  "name": "wp_ajax_get_post",
-  "title": "WP Ajax Get Post",
-  "description": "The best WordPress extension ever made!",
+  "name": "wp_ajax_get_posts",
+  "title": "WP Ajax Get Posts",
+  "description": "Get posts by ajax",
   "version": "0.1.0",
-  "homepage": "http://wordpress.org/plugins",
+  "homepage": "https://github.com/megazalrock/wp-ajax-get-post/",
   "author": {
     "name": "Otto Kamiya",
-    "email": "otto@mgzl.jp"
+    "email": "otto@mgzl.jp",
+    "url": "http://mgzl.jp"
   },
   "devDependencies": {
     "grunt": "~0.4.1",
