@@ -10,10 +10,11 @@ License URI:       http://www.gnu.org/licenses/gpl-2.0.html
 
 ## Description
 
-You can `get_posts` by JSONP.
+You can `get_posts` by JSONP.  
 It is also available for multisite WordPress.
 
 ### Front End (using jquery)
+
 	$.ajax(ajaxUrl,{
 		dataType:'jsonp',
 		crossDomain:true,
@@ -38,14 +39,16 @@ It is also available for multisite WordPress.
 ### Filter Hooks
 
 You can edit JSON return values.
+
 	add_filter('wpagp_make_json_data','wpagp_make_json_data', null, 1);
 	function wpagp_make_json_data($posts){
 		//do_something...
 		return $posts;
 	};
 
-On multisite, posts data are merged to single array.
+On multisite, posts data are merged to single array.  
 If you want do some thing to post data, you can use these hooks.
+
 	add_filter('wpagp_ajax_get_posts_each_site','wpagp_make_json_data', null, 1);
 	function wpagp_make_json_data($posts){
 		//do_something...
